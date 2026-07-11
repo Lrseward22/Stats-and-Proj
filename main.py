@@ -164,7 +164,9 @@ def proj_plot(name: str, proj: np.ndarray, labels: np.ndarray | None):
         plt.title(f"{name} Projection")
 
     plt.tight_layout()
+    plt.savefig(f"output/{name}.png", dpi=300, bbox_inches="tight")
     plt.show()
+    plt.close()
 
 ##################################################################
 
