@@ -8,10 +8,9 @@ import utils
 ######################### Data Loading ###########################
 # Load an arbitrary file (wine vs eeg) and ensure it is in a common interface
 """
-    Unfortunately, the features in eeg are the rows but the features for the
-    wine is the columns. We must transpose one of the matrices to make sure
-    the features are both rows or both columns. I have chosen to make the columns
-    the features. So I will transpose the eeg data
+We want to find the statistical features that describe each sample
+EEG data has each column denoting the samples while the wine dataset 
+has each row as a separate sample. Thus, we need to transpose the EEG data
 """
 def load_file(path: str) -> np.ndarray:
     # Identifies it as an EEG signal
@@ -36,11 +35,19 @@ def load_csv(path: str) -> pd.DataFrame:
 
 
 ########################### Get Stats ############################
+"""
+Initially, I thought I was getting statistical data per feature
+rather than per sample. In the context of ML, it makes more sense 
+to get them per sample and append them to each sample. As a result,
+I have determined that quantiles lose much of there meaning for the
+wine dataset. I have omitted them.
+"""
 def stats_extract(data: np.ndarray) -> dict:
     stats_dict = {}
 
-    for i in range(data.shape[1]):
-        x = data[:, i]
+    # Iterate per sample
+    for i in range(data.shape[0]):
+        x = data[i, :]
 
         stats_dict[f'feature_{i}'] = {
             "mean": utils.stats_mean(x),
@@ -49,17 +56,23 @@ def stats_extract(data: np.ndarray) -> dict:
             "min": utils.stats_min(x),
             "max": utils.stats_max(x),
             "iqr": utils.stats_interquartile_range(x),
-            "quant": utils.stats_quantiles(x, [25, 50, 75]),
+            #"quant": utils.stats_quantiles(x, [25, 50, 75]),
             "skew": utils.stats_skew(x),
             "kurt": utils.stats_kurtosis(x)
         }
 
     return stats_dict
 
-def stats_print(stats: dict):
-    print("\n===== STATISTICS SUMMARY =====\n")
+def stats_print(stats: dict, limit: int = 16):
+    print("\n===== STATISTICS SUMMARY (showing first", limit, "samples) =====\n")
+
+    count = 0
 
     for feature, values in stats.items():
+        if count >= limit:
+            break
+        count += 1
+
         print(f"{feature}")
         print(f"  Mean:         {values['mean']:.4f}")
         print(f"  STD:          {values['std']:.4f}")
@@ -69,7 +82,7 @@ def stats_print(stats: dict):
         print(f"  IQR:          {values['iqr']:.4f}")
         print(f"  Skew:         {values['skew']:.4f}")
         print(f"  Kurtosis:     {values['kurt']:.4f}")
-        print(f"  Quantiles:    {values['quant']}")
+        #print(f"  Quantiles:    {values['quant']}")
         print()
 ##################################################################
 
