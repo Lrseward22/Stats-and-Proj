@@ -76,9 +76,20 @@ The program prints:
 - variance
 - min/max
 - interquartile range
-- quantiles
 - skewness
 - kurtosis
+
+### Example Output
+
+feature_0
+  Mean:         6.2120
+  STD:          9.1278
+  Variance:     83.3159
+  Min:          0.0000
+  Max:          34.0000
+  IQR:          7.2350
+  Skew:         2.2506
+  Kurtosis:     4.2375
 
 And generates projections plots using Seaborn:
 
@@ -89,7 +100,9 @@ And generates projections plots using Seaborn:
 - t-Distributed Stochastic Neighbor Embedding (t-SNE)
     - Preserve local neighborhoods to create distinct clusters but distort global distances. Points that are close remain close however the distances between clusters lose meaning and the shape of the dataset is not preserved. Disregard cluster sizes.
 - Uniform Manifold Approximation and Projection (UMAP)
-    - Preserve local neighborhoods while maintaining manifold structure. It is faster and more stable. 
+    - Preserve local neighborhoods while maintaining manifold structure. It is faster and more stable.
+ 
+The plots may be seen in the output folder [here](output/)
 
 ---
 
