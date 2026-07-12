@@ -3,6 +3,8 @@ import numpy as np
 import mne
 import seaborn as sns
 import matplotlib.pyplot as plt
+import os
+
 import utils
 
 ######################### Data Loading ###########################
@@ -49,7 +51,7 @@ def stats_extract(data: np.ndarray) -> dict:
     for i in range(data.shape[0]):
         x = data[i, :]
 
-        stats_dict[f'feature_{i}'] = {
+        stats_dict[f'sample_{i}'] = {
             "mean": utils.stats_mean(x),
             "std": utils.stats_SD(x),
             "var": utils.stats_variance(x),
@@ -68,12 +70,12 @@ def stats_print(stats: dict, limit: int = 16):
 
     count = 0
 
-    for feature, values in stats.items():
+    for sample, values in stats.items():
         if count >= limit:
             break
         count += 1
 
-        print(f"{feature}")
+        print(f"{sample}")
         print(f"  Mean:         {values['mean']:.4f}")
         print(f"  STD:          {values['std']:.4f}")
         print(f"  Variance:     {values['var']:.4f}")
@@ -84,6 +86,21 @@ def stats_print(stats: dict, limit: int = 16):
         print(f"  Kurtosis:     {values['kurt']:.4f}")
         #print(f"  Quantiles:    {values['quant']}")
         print()
+
+def stats_to_numpy(stats: dict) -> np.ndarray:
+    stats_arr = []
+    for sample, values in stats.items():
+        stats_arr.append([
+            values['mean'],
+            values['std'],
+            values['var'],
+            values['min'],
+            values['max'],
+            values['iqr'],
+            values['skew'],
+            values['kurt']
+        ])
+    return np.array(stats_arr, dtype=float)
 ##################################################################
 
 
@@ -107,6 +124,13 @@ def proj_run(data: np.ndarray, labels: np.ndarray | None, dim: int, use_FLD=Fals
     projections["UMAP"] = utils.proj_UMAP(data, dim)
 
     return projections
+
+def proj_exist(names: list[str], folder: str="output") -> bool:
+    for name in names:
+        path = os.path.join(folder, f"{name}.png")
+        if not os.path.exists(path):
+            return False
+    return True
 
 def proj_plot(name: str, proj: np.ndarray, labels: np.ndarray | None):
     if proj is None:
@@ -170,6 +194,7 @@ def proj_plot(name: str, proj: np.ndarray, labels: np.ndarray | None):
 
 ##################################################################
 
+
 def load_wine() -> tuple[np.ndarray, np.ndarray]:
     # Load Wine dataset
     red = load_file("dataset/winequality-red.csv")
@@ -188,6 +213,7 @@ def load_wine() -> tuple[np.ndarray, np.ndarray]:
 def main():
     USE_WINE = True
     USE_FLD = USE_WINE
+    TRAIN_MODEL = USE_WINE
 
     if USE_WINE:
         data, labels = load_wine()
@@ -198,12 +224,21 @@ def main():
     stats = stats_extract(data)
     stats_print(stats)
 
+    X_stats = stats_to_numpy(stats)
+    X = np.concatenate([data, X_stats], axis=1)
+
+    if TRAIN_MODEL:
+        scores_RF = utils.model_RF(X, labels)
+        utils.model_print_RF(scores_RF)
+
     def plot_all_projections(projections: dict, labels: np.ndarray | None):
         for name, proj in projections.items():
             proj_plot(name, proj, labels)
 
-    projections = proj_run(data, labels, dim=2, use_FLD=USE_FLD)
-    plot_all_projections(projections, labels)
+    names = ["PCA", "FLD", "TSNE", "UMAP"] if USE_FLD else ["PCA", "TSNE", "UMAP"]
+    if not proj_exist(names):
+        projections = proj_run(data, labels, dim=2, use_FLD=USE_FLD)
+        plot_all_projections(projections, labels)
 
 if __name__ == "__main__":
     main()

@@ -6,6 +6,10 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as FLD
 from sklearn.manifold import TSNE
 import umap
 
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import cross_validate
+
+
 
 ######################### Statistics #############################
 
@@ -62,4 +66,47 @@ def proj_TSNE(data: np.ndarray, n: int) -> np.ndarray:
 
 def proj_UMAP(data: np.ndarray, n: int) -> np.ndarray:
     return umap.UMAP(n_components=n).fit_transform(data)
+##################################################################
+
+
+############################ Models ##############################
+def model_RF(data: np.ndarray, labels: np.ndarray) -> dict:
+    """
+    return a dictionary of test metrics:
+    {
+        'test_accuracy': [...]
+        'test_precision': [...]
+        'test_recall': [...]
+        'test_f1': [...]
+        'fit_time': [...]
+        'score_time': [...]
+    }
+    For 5-fold cross-validation, each list has 5 entries
+    """
+    model = RandomForestClassifier(
+        n_estimators=200,
+        max_depth=None,
+        min_samples_split=2,
+        min_samples_leaf=1,
+        max_features="sqrt",
+        bootstrap=True,
+        random_state=42
+    )
+    scores = cross_validate(
+        model, 
+        data, 
+        labels, 
+        cv=5, 
+        scoring=['accuracy', 'precision', 'recall', 'f1'],
+        return_train_score=False
+    )
+    
+    return scores
+
+def model_print_RF(scores: dict):
+    print("\n===== Random Forest (5-fold CV) =====")
+    print(f"Accuracy:  {scores['test_accuracy'].mean():.4f}")
+    print(f"Precision: {scores['test_precision'].mean():.4f}")
+    print(f"Recall:    {scores['test_recall'].mean():.4f}")
+    print(f"F1 Score:  {scores['test_f1'].mean():.4f}")
 ##################################################################
