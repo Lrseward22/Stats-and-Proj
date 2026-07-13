@@ -232,11 +232,14 @@ def main():
         utils.model_print_results("Random Forest", scores_RF)
 
         scores_SVM_linear = utils.model_SVM(X, labels, "linear")
-        utils.model_print_results("SMV - Linear", scores_SVM_linear)
+        utils.model_print_results("SVM - Linear", scores_SVM_linear)
         scores_SVM_poly = utils.model_SVM(X, labels, "poly")
-        utils.model_print_results("SMV - Polynomial", scores_SVM_poly)
+        utils.model_print_results("SVM - Polynomial", scores_SVM_poly)
         scores_SVM_rbf = utils.model_SVM(X, labels, "rbf")
-        utils.model_print_results("SMV - RBF", scores_SVM_rbf)
+        utils.model_print_results("SVM - RBF", scores_SVM_rbf)
+
+        scores_OneClassSVM = utils.model_OneClassSVM(X, labels, "linear")
+        utils.model_print_results("One-Class SVM", scores_OneClassSVM)
 
     def plot_all_projections(projections: dict, labels: np.ndarray | None):
         for name, proj in projections.items():

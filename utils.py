@@ -7,14 +7,12 @@ from sklearn.manifold import TSNE
 import umap
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from sklearn.model_selection import cross_validate
-from sklearn.metrics import make_scorer, precision_score, recall_score, f1_score
-
+from sklearn.svm import SVC, OneClassSVM
+from sklearn.model_selection import cross_validate, KFold
+from sklearn.metrics import make_scorer, accuracy_score, precision_score, recall_score, f1_score
 
 
 ######################### Statistics #############################
-
 # Compute the mean for a single feature
 def stats_mean(data: np.ndarray) -> float:
     return np.mean(data)
@@ -72,19 +70,20 @@ def proj_UMAP(data: np.ndarray, n: int) -> np.ndarray:
 
 
 ############################ Models ##############################
+"""
+all models return a dictionary of test metrics:
+{
+    'test_accuracy': [...]
+    'test_precision': [...]
+    'test_recall': [...]
+    'test_f1': [...]
+    'fit_time': [...]
+    'score_time': [...]
+}
+For 5-fold cross-validation, each list has 5 entries
+"""
+
 def model_RF(data: np.ndarray, labels: np.ndarray) -> dict:
-    """
-    return a dictionary of test metrics:
-    {
-        'test_accuracy': [...]
-        'test_precision': [...]
-        'test_recall': [...]
-        'test_f1': [...]
-        'fit_time': [...]
-        'score_time': [...]
-    }
-    For 5-fold cross-validation, each list has 5 entries
-    """
     model = RandomForestClassifier(
         n_estimators=200,
         max_depth=None,
@@ -115,8 +114,6 @@ def model_SVM(data: np.ndarray, labels: np.ndarray, kernel_type: str) -> dict:
     recall = make_scorer(recall_score, zero_division=0)
     f1 = make_scorer(f1_score, zero_division=0)
 
-
-
     K = np.dot(data, data.T)
     if kernel_type == "linear":
         model = SVC(kernel=kernel_type, random_state=42)
@@ -145,6 +142,45 @@ def model_SVM(data: np.ndarray, labels: np.ndarray, kernel_type: str) -> dict:
     )
 
     return scores
+
+def model_OneClassSVM(data: np.ndarray, labels: np.ndarray, kernel_type: str) -> dict:
+    def map_labels(arr: np.ndarray) -> np.ndarray:
+        mapped = np.where(arr == 1, 1, -1)
+        return mapped
+    
+    Y = map_labels(labels)
+
+    accs, precs, recs, f1s = [], [], [], []
+
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
+
+    for train, test in kf.split(data):
+        X_train = data[train]
+        Y_train = Y[train]
+
+        X_test = data[test]
+        Y_test = Y[test]
+
+        # Train only with +1 class
+        X_train = X_train[Y_train == 1]
+
+        # Create, train, and test model
+        model = OneClassSVM(kernel=kernel_type, nu=0.1, gamma="scale")
+        model.fit(X_train)
+        Y_pred = model.predict(X_test)
+
+        # Compute Metrics
+        accs.append(accuracy_score(Y_test, Y_pred))
+        precs.append(precision_score(Y_test, Y_pred, zero_division=0))
+        recs.append(recall_score(Y_test, Y_pred, zero_division=0))
+        f1s.append(f1_score(Y_test, Y_pred, zero_division=0))
+
+    return {
+        "test_accuracy": np.array(accs),
+        "test_precision": np.array(precs),
+        "test_recall": np.array(recs),
+        "test_f1": np.array(f1s)
+    }
 
 def model_print_results(name: str, scores: dict):
     print(f"\n===== {name} (5-fold CV) =====")
