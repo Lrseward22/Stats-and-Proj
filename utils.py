@@ -7,7 +7,9 @@ from sklearn.manifold import TSNE
 import umap
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 from sklearn.model_selection import cross_validate
+from sklearn.metrics import make_scorer, precision_score, recall_score, f1_score
 
 
 
@@ -103,8 +105,49 @@ def model_RF(data: np.ndarray, labels: np.ndarray) -> dict:
     
     return scores
 
-def model_print_RF(scores: dict):
-    print("\n===== Random Forest (5-fold CV) =====")
+def model_SVM(data: np.ndarray, labels: np.ndarray, kernel_type: str) -> dict:
+    """
+    Due to the unbalanced dataset, SVM struggles with classification
+    We must explicitly state how to calculate the metrics in the 
+    case that a test fold predicts only one class
+    """
+    precision = make_scorer(precision_score, zero_division=0)
+    recall = make_scorer(recall_score, zero_division=0)
+    f1 = make_scorer(f1_score, zero_division=0)
+
+
+
+    K = np.dot(data, data.T)
+    if kernel_type == "linear":
+        model = SVC(kernel=kernel_type, random_state=42)
+    elif kernel_type == "poly":
+        degree = 3
+        K = (K + 1)**degree
+        model = SVC(kernel=kernel_type, degree=3, random_state=42)
+    elif kernel_type == "rbf":
+        # Normalize then exponentiate
+        K = np.exp(K / np.max(np.abs(K)))
+        model = SVC(kernel=kernel_type, random_state=42)
+    else:
+        raise ValueError(f"Unknown kernel type: {kernel_type}")
+
+    scores = cross_validate(
+        model, 
+        data, 
+        labels, 
+        cv=5, 
+        scoring={
+            'accuracy': 'accuracy', 
+            'precision': precision, 
+            'recall': recall, 
+            'f1': f1},
+        return_train_score=False
+    )
+
+    return scores
+
+def model_print_results(name: str, scores: dict):
+    print(f"\n===== {name} (5-fold CV) =====")
     print(f"Accuracy:  {scores['test_accuracy'].mean():.4f}")
     print(f"Precision: {scores['test_precision'].mean():.4f}")
     print(f"Recall:    {scores['test_recall'].mean():.4f}")

@@ -229,7 +229,14 @@ def main():
 
     if TRAIN_MODEL:
         scores_RF = utils.model_RF(X, labels)
-        utils.model_print_RF(scores_RF)
+        utils.model_print_results("Random Forest", scores_RF)
+
+        scores_SVM_linear = utils.model_SVM(X, labels, "linear")
+        utils.model_print_results("SMV - Linear", scores_SVM_linear)
+        scores_SVM_poly = utils.model_SVM(X, labels, "poly")
+        utils.model_print_results("SMV - Polynomial", scores_SVM_poly)
+        scores_SVM_rbf = utils.model_SVM(X, labels, "rbf")
+        utils.model_print_results("SMV - RBF", scores_SVM_rbf)
 
     def plot_all_projections(projections: dict, labels: np.ndarray | None):
         for name, proj in projections.items():
