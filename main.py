@@ -241,6 +241,9 @@ def main():
         scores_OneClassSVM = utils.model_OneClassSVM(X, labels, "linear")
         utils.model_print_results("One-Class SVM", scores_OneClassSVM)
 
+        scores_MLP = utils.model_MLP(data, labels)
+        utils.model_print_results("MLP", scores_MLP)
+
     def plot_all_projections(projections: dict, labels: np.ndarray | None):
         for name, proj in projections.items():
             proj_plot(name, proj, labels)
