@@ -53,8 +53,8 @@ USE_WINE = True       # set to False to use EEG data
 
 Your dataset must follow these rules:
 
- - Rown = Samples
- - columns = features
+ - Rows = samples
+ - Columns = features
  - All values must be numeric
  - EEG files must be `.set ` format
 
@@ -81,6 +81,7 @@ The program prints:
 
 ### Example Output
 
+```
 feature_0
   Mean:         6.2120
   STD:          9.1278
@@ -90,6 +91,7 @@ feature_0
   IQR:          7.2350
   Skew:         2.2506
   Kurtosis:     4.2375
+```
 
 And generates projections plots using Seaborn:
 
@@ -103,6 +105,20 @@ And generates projections plots using Seaborn:
     - Preserve local neighborhoods while maintaining manifold structure. It is faster and more stable.
  
 The plots may be seen in the output folder [here](output/)
+
+### Example Output
+
+```
+feature_0
+  Mean:         6.2120
+  STD:          9.1278
+  Variance:     83.3159
+  Min:          0.0000
+  Max:          34.0000
+  IQR:          7.2350
+  Skew:         2.2506
+  Kurtosis:     4.2375
+```
 
 ---
 
