@@ -16,6 +16,8 @@ from tensorflow.keras.layers import Dense, Input, Conv1D, MaxPooling1D, Flatten
 from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 
+from typing import Tuple
+
 
 ######################### Statistics #############################
 # Compute the mean for a single feature
@@ -109,7 +111,7 @@ def model_RF(data: np.ndarray, labels: np.ndarray) -> dict:
     
     return scores
 
-def model_SVM(data: np.ndarray, labels: np.ndarray, kernel_type: str) -> dict:
+def model_SVM(data: np.ndarray, labels: np.ndarray, kernel_type: str) -> Tuple[dict, np.ndarray]:
     """
     Due to the unbalanced dataset, SVM struggles with classification
     We must explicitly state how to calculate the metrics in the 
@@ -146,7 +148,7 @@ def model_SVM(data: np.ndarray, labels: np.ndarray, kernel_type: str) -> dict:
         return_train_score=False
     )
 
-    return scores
+    return scores, K
 
 def model_OneClassSVM(data: np.ndarray, labels: np.ndarray, kernel_type: str) -> dict:
     def map_labels(arr: np.ndarray) -> np.ndarray:

@@ -125,14 +125,15 @@ def proj_run(data: np.ndarray, labels: np.ndarray | None, dim: int, use_FLD=Fals
 
     return projections
 
-def proj_exist(names: list[str], folder: str="output") -> bool:
-    for name in names:
-        path = os.path.join(folder, f"{name}.png")
+def proj_exist(projs: list[str], name: str, folder: str="output") -> bool:
+    for proj in projs:
+        filename = f"{name}_{proj}.png"
+        path = os.path.join(folder, filename)
         if not os.path.exists(path):
             return False
     return True
 
-def proj_plot(name: str, proj: np.ndarray, labels: np.ndarray | None):
+def proj_plot(name: str, proj: np.ndarray, labels: np.ndarray | None, proj_name: str):
     if proj is None:
         return
 
@@ -185,10 +186,10 @@ def proj_plot(name: str, proj: np.ndarray, labels: np.ndarray | None):
             )
         plt.xlabel("Component 1")
         plt.ylabel("Component 2")
-        plt.title(f"{name} Projection")
+        plt.title(f"{name} {proj_name} Projection")
 
     plt.tight_layout()
-    plt.savefig(f"output/{name}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(f"output/{name}_{proj_name}.png", dpi=300, bbox_inches="tight")
     plt.show()
     plt.close()
 
@@ -227,16 +228,23 @@ def main():
     X_stats = stats_to_numpy(stats)
     X = np.concatenate([data, X_stats], axis=1)
 
+    kernels = {}
+
     if TRAIN_MODEL:
         scores_RF = utils.model_RF(X, labels)
         utils.model_print_results("Random Forest", scores_RF)
 
-        scores_SVM_linear = utils.model_SVM(X, labels, "linear")
+        scores_SVM_linear, K_linear = utils.model_SVM(X, labels, "linear")
         utils.model_print_results("SVM - Linear", scores_SVM_linear)
-        scores_SVM_poly = utils.model_SVM(X, labels, "poly")
+        kernels["linear"] = K_linear
+
+        scores_SVM_poly, K_poly = utils.model_SVM(X, labels, "poly")
         utils.model_print_results("SVM - Polynomial", scores_SVM_poly)
-        scores_SVM_rbf = utils.model_SVM(X, labels, "rbf")
+        kernels["poly"] = K_poly
+
+        scores_SVM_rbf, K_rbf = utils.model_SVM(X, labels, "rbf")
         utils.model_print_results("SVM - RBF", scores_SVM_rbf)
+        kernels["rbf"] = K_rbf
 
         scores_OneClassSVM = utils.model_OneClassSVM(X, labels, "linear")
         utils.model_print_results("One-Class SVM", scores_OneClassSVM)
@@ -247,14 +255,21 @@ def main():
         scores_CNN = utils.model_CNN(data, labels)
         utils.model_print_results("CNN", scores_CNN)
 
-    def plot_all_projections(projections: dict, labels: np.ndarray | None):
+    def plot_all_projections(projections: dict, labels: np.ndarray | None, data_name: str):
         for name, proj in projections.items():
-            proj_plot(name, proj, labels)
+            proj_plot(data_name, proj, labels, name)
 
     names = ["PCA", "FLD", "TSNE", "UMAP"] if USE_FLD else ["PCA", "TSNE", "UMAP"]
-    if not proj_exist(names):
+    if not proj_exist(names, "dataset"):
         projections = proj_run(data, labels, dim=2, use_FLD=USE_FLD)
-        plot_all_projections(projections, labels)
+        plot_all_projections(projections, labels, "dataset")
+
+    for name, kernel in kernels.items():
+        # Normalize to help with projections
+        kernel = kernel / np.max(np.abs(kernel))
+        if not proj_exist(names, name):
+            projections = proj_run(kernel, labels, dim=2, use_FLD=USE_FLD)
+            plot_all_projections(projections, labels, name)
 
 if __name__ == "__main__":
     main()
