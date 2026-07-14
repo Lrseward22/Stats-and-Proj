@@ -12,7 +12,7 @@ from sklearn.model_selection import cross_validate, KFold
 from sklearn.metrics import make_scorer, accuracy_score, precision_score, recall_score, f1_score
 
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.layers import Dense, Input, Conv1D, MaxPooling1D, Flatten
 from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 
@@ -202,6 +202,71 @@ def model_MLP(data: np.ndarray, labels: np.ndarray) -> dict:
         # Create Model
         model = Sequential([
             Input(shape=(data.shape[1],)),
+            Dense(128, activation='relu'),
+            Dense(64, activation='relu'),
+            Dense(32, activation='relu'),
+            Dense(16, activation='relu'),
+            Dense(1, activation='sigmoid')
+        ])
+
+        model.compile(
+            optimizer=Adam(learning_rate=0.001),
+            loss='binary_crossentropy',
+            metrics=['accuracy']
+        )
+
+        # Train
+        model.fit(
+            X_train, Y_train,
+            epochs=20,
+            batch_size=32,
+            verbose=0
+        )
+
+        # Get prediction
+        Y_hat = model.predict(X_test, verbose=0)
+        Y_pred = (Y_hat > 0.5).astype(int).flatten()
+
+        # Compute Metrics
+        accs.append(accuracy_score(Y_test, Y_pred))
+        precs.append(precision_score(Y_test, Y_pred, zero_division=0))
+        recs.append(recall_score(Y_test, Y_pred, zero_division=0))
+        f1s.append(f1_score(Y_test, Y_pred, zero_division=0))
+
+        # Delete graph buildup
+        tf.compat.v1.reset_default_graph()
+
+    return {
+        "test_accuracy": np.array(accs),
+        "test_precision": np.array(precs),
+        "test_recall": np.array(recs),
+        "test_f1": np.array(f1s)
+    }
+
+def model_CNN(data: np.ndarray, labels: np.ndarray) -> dict:
+    accs, precs, recs, f1s = [], [], [], []
+
+    # CNN expects data to be (samples, timesteps, channels)
+    # We must add the channels dimension
+    data_cnn = data.reshape(data.shape[0], data.shape[1], 1)
+
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
+
+    for train, test in kf.split(data):
+        X_train = data_cnn[train]
+        Y_train = labels[train]
+
+        X_test = data_cnn[test]
+        Y_test = labels[test]
+
+        # Create Model
+        model = Sequential([
+            Input(shape=(data.shape[1],1)),
+            Conv1D(filters=32, kernel_size=5, padding='same', activation='relu'),
+            Conv1D(filters=64, kernel_size=3, padding='same', activation='relu'),
+            MaxPooling1D(pool_size=2),
+            Flatten(),
+
             Dense(128, activation='relu'),
             Dense(64, activation='relu'),
             Dense(32, activation='relu'),

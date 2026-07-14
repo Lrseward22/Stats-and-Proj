@@ -244,6 +244,9 @@ def main():
         scores_MLP = utils.model_MLP(data, labels)
         utils.model_print_results("MLP", scores_MLP)
 
+        scores_CNN = utils.model_CNN(data, labels)
+        utils.model_print_results("CNN", scores_CNN)
+
     def plot_all_projections(projections: dict, labels: np.ndarray | None):
         for name, proj in projections.items():
             proj_plot(name, proj, labels)
