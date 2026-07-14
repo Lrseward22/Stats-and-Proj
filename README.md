@@ -1,6 +1,16 @@
 # State-and-Proj
 
-A simple demonstration project for computing statistical features and running dimensionality-reduction projections(PCA, FLD, t-SNE, UMAP) on arbitrary datasets. Supports both CSV datasets and EEG .set files through a unified NumPy interface.
+This project provides a unified pipeline for:
+- computing statistical features,
+- performing dimenionality-reduction projections (PCA, FLD, t-SNE, UMAP)
+- training classical and deep-learning models,
+- and visualizing both raw data and classical kernel matrices.
+
+It supports CSV datasets and EEG `.set` files, converting both into a consistent NumPy-based interface.
+
+The pipeline extracts statistical descriptors, trains multiple machine-learning models, and generates projection plots for both the original dataset and the classical kernels derived from SVM (linear, polynomial, and RBF).
+
+The goal is to offer a clean, reproducible demonstraction of feature extraction, model benchmarking, and manifold visualization across heterogeneous datasets.
 
 ---
 
@@ -69,31 +79,45 @@ EEG data is unlabeled, FLD is skipped automatically as there is not enough class
 
 ## Output
 
-The program prints:
+### Statistical Features
 
+For each column, the program computes:
 - mean
 - standard deviation
 - variance
-- min/max
+- minimum/maximum
 - interquartile range
 - skewness
 - kurtosis
 
-### Example Output
+These are printed in a structured format for inspection.
 
-```
-feature_0
-  Mean:         6.2120
-  STD:          9.1278
-  Variance:     83.3159
-  Min:          0.0000
-  Max:          34.0000
-  IQR:          7.2350
-  Skew:         2.2506
-  Kurtosis:     4.2375
-```
+### Machine Learning Models
 
-And generates projections plots using Seaborn:
+The following models are trained and evaluated using 5-fold cross-validation
+- Random Forest (RF):
+  - Decision trees are formed with decision thresholds optimized to suit a specified subset of the training data
+- Support Vector Machine (SVM):
+  - Delineats possible classes utilizing a hyperplane that maximizes the distance between the separate classes. To try to make sure the data is linear, we can try transformations according to the different kernels:
+    - linear 
+    - polynomial 
+    - radial basis function (RBF)
+- One-Class SVM:
+  - Learns a boundary around a single class for anomaly‑style separation.
+- Multi-Layer Perceptron (MLP)
+  - Fully‑connected neural network for nonlinear classification.
+- Convolutional Neural Network (CNN)
+  - 1D‑CNN with two convolution layers followed by dense layers.
+
+Each model reports:
+- accuracy
+- precision
+- recall
+- f1 score
+
+### Projection Visualizations
+
+Dimensionality-reduction plots are generated using Seaborn and saved to the `output/` directory.
 
 - Principal Component Analysis (PCA):
     - Determines which dimensions the dataset has the largest variance and projects the data into only those dimensions. That is, it preserves only the dimensions of greatest variability. It preserves majority of variance and distances along principle directions.
@@ -103,6 +127,8 @@ And generates projections plots using Seaborn:
     - Preserve local neighborhoods to create distinct clusters but distort global distances. Points that are close remain close however the distances between clusters lose meaning and the shape of the dataset is not preserved. Disregard cluster sizes.
 - Uniform Manifold Approximation and Projection (UMAP)
     - Preserve local neighborhoods while maintaining manifold structure. It is faster and more stable.
+
+ These projections are applied both the the *raw dataset* and to the *classical SVM kernels* (linear, polynomial, RBF), enabling visualization of how kernel geometry transforms the data.
  
 The plots may be seen in the output folder [here](output/)
 
@@ -118,6 +144,16 @@ feature_0
   IQR:          7.2350
   Skew:         2.2506
   Kurtosis:     4.2375
+
+.
+.
+.
+
+===== MLP (5-fold CV) =====
+Accuracy:  0.9823
+Precision: 0.9827
+Recall:    0.9453
+F1 Score:  0.9635
 ```
 
 ---
@@ -142,7 +178,7 @@ Stats-and-Proj/
 
 - FLD produces a 1-D projection for 2-class datasets.
 - EEG data is transposed so columns represents features.
-- All processing is down using NumPy arrays for consistency.
-
+- All processing is performed using NumPy arrays for consistency.
+- kernel matrices are normalized before projection to stabilize t-SNE and UMAP
 
 
